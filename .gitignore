@@ -88,5 +88,10 @@ typings/
 # Vite
 .vite/
 
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
 # Electron-Forge
 out/
