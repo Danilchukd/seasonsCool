@@ -1,52 +1,14 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import {
-  addMedia,
-  deleteMedia,
-  getDatabase,
-  getMedia,
-  updateMedia,
-} from './services/databaseService';
+
+import { registerMediaHandlers } from './ipc/mediaHandlers';
+import { getDatabase } from './services/databaseService';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
-
-ipcMain.handle('ping', async () => {
-  return 'pong from Electron Main Process';
-});
-
-ipcMain.handle(
-  'media:add',
-  async (_event, title: string, type: string) => {
-    return addMedia(title, type);
-  },
-);
-
-ipcMain.handle('media:getAll', async () => {
-  return getMedia();
-});
-
-ipcMain.handle(
-  'media:delete',
-  async (_event, id: number) => {
-    return deleteMedia(id);
-  },
-);
-
-ipcMain.handle(
-  'media:update',
-  async (
-    _event,
-    id: number,
-    title: string,
-    type: string,
-  ) => {
-    return updateMedia(id, title, type);
-  },
-);
 
 const createWindow = () => {
   // Create the browser window.
@@ -78,6 +40,8 @@ app.whenReady().then(() => {
   getDatabase();
 
   console.log('SQLite database initialized');
+
+  registerMediaHandlers();
 
   createWindow();
 });

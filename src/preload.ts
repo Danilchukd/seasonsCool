@@ -1,20 +1,22 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type { ElectronAPI } from './types/electronApi';
 
-contextBridge.exposeInMainWorld('electronAPI', {
-    ping: (): Promise<string> => ipcRenderer.invoke('ping'),
+const electronAPI: ElectronAPI = {
 
-    addMedia: (title: string, type: string): Promise<number> =>
-        ipcRenderer.invoke('media:add', title, type),
+  addMedia: (media) =>
+    ipcRenderer.invoke('media:add', media),
 
-    getMedia: () => ipcRenderer.invoke('media:getAll'),
+  getMedia: () =>
+    ipcRenderer.invoke('media:getAll'),
 
-    deleteMedia: (id: number): Promise<boolean> =>
-        ipcRenderer.invoke('media:delete', id),
+  deleteMedia: (id) =>
+    ipcRenderer.invoke('media:delete', id),
 
-    updateMedia: (
-        id: number,
-        title: string,
-        type: string,
-    ): Promise<boolean> =>
-        ipcRenderer.invoke('media:update', id, title, type),
-});
+  updateMedia: (media) =>
+    ipcRenderer.invoke('media:update', media),
+};
+
+contextBridge.exposeInMainWorld(
+  'electronAPI',
+  electronAPI,
+);
