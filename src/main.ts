@@ -3,7 +3,10 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
 import { registerMediaHandlers } from './ipc/mediaHandlers';
-import { getDatabase } from './services/databaseService';
+import {
+  closeDatabase,
+  initializeDatabase,
+} from './services/databaseService';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -37,13 +40,17 @@ const createWindow = () => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  getDatabase();
+  initializeDatabase();
 
   console.log('SQLite database initialized');
 
   registerMediaHandlers();
 
   createWindow();
+});
+
+app.on('before-quit', () => {
+  closeDatabase();
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

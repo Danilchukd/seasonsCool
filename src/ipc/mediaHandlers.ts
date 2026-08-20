@@ -7,16 +7,19 @@ import {
   updateMedia,
 } from '../services/databaseService';
 
-import type {
-  CreateMediaInput,
-  UpdateMediaInput,
-} from '../types/media';
+import {
+  validateCreateMediaInput,
+  validateMediaId,
+  validateUpdateMediaInput,
+} from '../validators/mediaValidator';
 
 export function registerMediaHandlers() {
   ipcMain.handle(
     'media:add',
-    async (_event, media: CreateMediaInput) => {
-      return addMedia(media.title, media.type);
+    async (_event, input: unknown) => {
+      const media = validateCreateMediaInput(input);
+
+      return addMedia(media);
     },
   );
 
@@ -26,19 +29,19 @@ export function registerMediaHandlers() {
 
   ipcMain.handle(
     'media:delete',
-    async (_event, id: number) => {
+    async (_event, input: unknown) => {
+      const id = validateMediaId(input);
+
       return deleteMedia(id);
     },
   );
 
   ipcMain.handle(
     'media:update',
-    async (_event, media: UpdateMediaInput) => {
-      return updateMedia(
-        media.id,
-        media.title,
-        media.type,
-      );
+    async (_event, input: unknown) => {
+      const media = validateUpdateMediaInput(input);
+
+      return updateMedia(media);
     },
   );
 }
