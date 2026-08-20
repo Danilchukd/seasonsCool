@@ -1,6 +1,11 @@
 import Database from 'better-sqlite3';
 import { app } from 'electron';
 import path from 'node:path';
+import type {
+  CreateMediaInput,
+  MediaRecord,
+  UpdateMediaInput,
+} from '../types/media';
 
 let database: Database.Database | null = null;
 
@@ -20,9 +25,9 @@ function initializeSchema(db: Database.Database) {
   `);
 }
 
-export function getDatabase(): Database.Database {
+export function initializeDatabase(): void {
   if (database) {
-    return database;
+    return;
   }
 
   const databasePath = path.join(
@@ -37,13 +42,27 @@ export function getDatabase(): Database.Database {
   database.pragma('journal_mode = WAL');
 
   initializeSchema(database);
+}
+
+function getDatabase(): Database.Database {
+  if (!database) {
+    throw new Error('Database has not been initialized');
+  }
 
   return database;
 }
 
+export function closeDatabase(): void {
+  if (!database) {
+    return;
+  }
+
+  database.close();
+  database = null;
+}
+
 export function addMedia(
-  title: string,
-  type: string,
+  media: CreateMediaInput,
 ): number {
   const db = getDatabase();
 
@@ -55,21 +74,12 @@ export function addMedia(
     VALUES (?, ?)
   `);
 
-  const result = statement.run(title, type);
+  const result = statement.run(
+    media.title,
+    media.type,
+  );
 
   return Number(result.lastInsertRowid);
-}
-
-export interface MediaRecord {
-  id: number;
-  title: string;
-  type: string;
-  file_path: string | null;
-  poster_path: string | null;
-  year: number | null;
-  duration_minutes: number | null;
-  description: string | null;
-  created_at: string;
 }
 
 export function getMedia(): MediaRecord[] {
@@ -107,9 +117,7 @@ export function deleteMedia(id: number): boolean {
 }
 
 export function updateMedia(
-  id: number,
-  title: string,
-  type: string,
+  media: UpdateMediaInput,
 ): boolean {
   const db = getDatabase();
 
@@ -121,7 +129,11 @@ export function updateMedia(
     WHERE id = ?
   `);
 
-  const result = statement.run(title, type, id);
+  const result = statement.run(
+    media.title,
+    media.type,
+    media.id,
+  );
 
   return result.changes > 0;
 }
