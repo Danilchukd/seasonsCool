@@ -14,6 +14,12 @@ const electronAPI: ElectronAPI = {
 
   updateMedia: (media) =>
     ipcRenderer.invoke('media:update', media),
+
+  selectMediaFile: () =>
+    ipcRenderer.invoke('file:selectMedia'),
+
+  openMediaFile: (filePath) =>
+    ipcRenderer.invoke('file:openMedia', filePath),
 };
 
 contextBridge.exposeInMainWorld(

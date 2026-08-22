@@ -24,6 +24,7 @@ export default function MediaList({
   const [editType, setEditType] = useState('movie');
   const [editYear, setEditYear] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editFilePath, setEditFilePath] = useState<string | null>(null);
 
   const startEditing = (item: MediaRecord) => {
     setEditingId(item.id);
@@ -31,6 +32,7 @@ export default function MediaList({
     setEditType(item.type);
     setEditYear(item.year?.toString() ?? '');
     setEditDescription(item.description ?? '');
+    setEditFilePath(item.file_path);
   };
 
   const cancelEditing = () => {
@@ -39,6 +41,7 @@ export default function MediaList({
     setEditType('movie');
     setEditYear('');
     setEditDescription('');
+    setEditFilePath(null);
   };
 
   const handleSubmit = async (
@@ -57,10 +60,29 @@ export default function MediaList({
       type: editType,
       year: editYear ? Number(editYear) : null,
       description: editDescription || null,
+      filePath: editFilePath,
     });
 
     if (updated) {
       cancelEditing();
+    }
+  };
+
+  const handleSelectEditFile = async () => {
+    const selectedFile =
+      await window.electronAPI.selectMediaFile();
+
+    if (selectedFile) {
+      setEditFilePath(selectedFile);
+    }
+  };
+
+  const handleOpenFile = async (filePath: string) => {
+    const opened =
+      await window.electronAPI.openMediaFile(filePath);
+
+    if (!opened) {
+      console.error('Failed to open media file');
     }
   };
 
@@ -119,6 +141,10 @@ export default function MediaList({
                   <option value="game">
                     Игра
                   </option>
+
+                  <option value="clip">
+                    Клип
+                  </option>
                 </select>
               </div>
 
@@ -152,6 +178,21 @@ export default function MediaList({
                 />
               </div>
 
+              <div>
+                <label>Файл</label>
+
+                <button
+                  type="button"
+                  onClick={handleSelectEditFile}
+                >
+                  Выбрать другой файл
+                </button>
+
+                {editFilePath && (
+                  <p>{editFilePath}</p>
+                )}
+              </div>
+
               <button type="submit">
                 Сохранить
               </button>
@@ -176,6 +217,21 @@ export default function MediaList({
 
                 {item.description && (
                   <p>{item.description}</p>
+                )}
+
+                {item.file_path && (
+                  <div>
+                    <p>
+                      Файл: {item.file_path}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => handleOpenFile(item.file_path!)}
+                    >
+                      Открыть
+                    </button>
+                  </div>
                 )}
               </div>
 

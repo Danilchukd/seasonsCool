@@ -19,4 +19,7 @@ export interface ElectronAPI {
   updateMedia: (
     media: UpdateMediaInput,
   ) => Promise<boolean>;
+
+  selectMediaFile: () => Promise<string | null>;
+  openMediaFile: (filePath: string) => Promise<boolean>;
 }
