@@ -22,17 +22,23 @@ export default function MediaList({
 
   const [editTitle, setEditTitle] = useState('');
   const [editType, setEditType] = useState('movie');
+  const [editYear, setEditYear] = useState('');
+  const [editDescription, setEditDescription] = useState('');
 
   const startEditing = (item: MediaRecord) => {
     setEditingId(item.id);
     setEditTitle(item.title);
     setEditType(item.type);
+    setEditYear(item.year?.toString() ?? '');
+    setEditDescription(item.description ?? '');
   };
 
   const cancelEditing = () => {
     setEditingId(null);
     setEditTitle('');
     setEditType('movie');
+    setEditYear('');
+    setEditDescription('');
   };
 
   const handleSubmit = async (
@@ -49,6 +55,8 @@ export default function MediaList({
       id,
       title: editTitle,
       type: editType,
+      year: editYear ? Number(editYear) : null,
+      description: editDescription || null,
     });
 
     if (updated) {
@@ -70,37 +78,79 @@ export default function MediaList({
                 handleSubmit(event, item.id)
               }
             >
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(event) =>
-                  setEditTitle(event.target.value)
-                }
-                required
-              />
+              <div>
+                <label>
+                  Название
+                </label>
 
-              <select
-                value={editType}
-                onChange={(event) =>
-                  setEditType(event.target.value)
-                }
-              >
-                <option value="movie">
-                  Фильм
-                </option>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(event) =>
+                    setEditTitle(event.target.value)
+                  }
+                  required
+                />
+              </div>
 
-                <option value="series">
-                  Сериал
-                </option>
+              <div>
+                <label>
+                  Тип
+                </label>
 
-                <option value="cartoon">
-                  Мультфильм
-                </option>
+                <select
+                  value={editType}
+                  onChange={(event) =>
+                    setEditType(event.target.value)
+                  }
+                >
+                  <option value="movie">
+                    Фильм
+                  </option>
 
-                <option value="game">
-                  Игра
-                </option>
-              </select>
+                  <option value="series">
+                    Сериал
+                  </option>
+
+                  <option value="cartoon">
+                    Мультфильм
+                  </option>
+
+                  <option value="game">
+                    Игра
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label>
+                  Год
+                </label>
+
+                <input
+                  type="number"
+                  value={editYear}
+                  onChange={(event) =>
+                    setEditYear(event.target.value)
+                  }
+                  placeholder="2001"
+                  min="1"
+                />
+              </div>
+
+              <div>
+                <label>
+                  Описание
+                </label>
+
+                <textarea
+                  value={editDescription}
+                  onChange={(event) =>
+                    setEditDescription(event.target.value)
+                  }
+                  placeholder="Описание"
+                />
+              </div>
 
               <button type="submit">
                 Сохранить
@@ -115,7 +165,19 @@ export default function MediaList({
             </form>
           ) : (
             <>
-              {item.title} — {item.type}
+              <div>
+                <strong>{item.title}</strong>
+                {' — '}
+                {item.type}
+
+                {item.year !== null && (
+                  <span> ({item.year})</span>
+                )}
+
+                {item.description && (
+                  <p>{item.description}</p>
+                )}
+              </div>
 
               <button
                 onClick={() => startEditing(item)}

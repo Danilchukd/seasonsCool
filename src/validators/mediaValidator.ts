@@ -7,6 +7,36 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+function validateYear(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (
+    typeof value !== 'number' ||
+    !Number.isInteger(value) ||
+    value <= 0
+  ) {
+    throw new Error('Media year must be a positive integer');
+  }
+
+  return value;
+}
+
+function validateDescription(value: unknown): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error('Media description must be a string');
+  }
+
+  const description = value.trim();
+
+  return description.length > 0 ? description : null;
+}
+
 export function validateCreateMediaInput(
   input: unknown,
 ): CreateMediaInput {
@@ -14,7 +44,12 @@ export function validateCreateMediaInput(
     throw new Error('Media data must be an object');
   }
 
-  const { title, type } = input;
+  const {
+    title,
+    type,
+    year,
+    description,
+  } = input;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
     throw new Error('Media title cannot be empty');
@@ -27,6 +62,8 @@ export function validateCreateMediaInput(
   return {
     title: title.trim(),
     type: type.trim(),
+    year: validateYear(year),
+    description: validateDescription(description),
   };
 }
 

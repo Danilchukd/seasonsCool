@@ -9,6 +9,8 @@ interface MediaFormProps {
 export default function MediaForm({ onAdd }: MediaFormProps) {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('movie');
+  const [year, setYear] = useState('');
+  const [description, setDescription] = useState('');
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -22,10 +24,14 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
     await onAdd({
       title,
       type,
+      year: year ? Number(year) : null,
+      description: description || null,
     });
 
     setTitle('');
     setType('movie');
+    setYear('');
+    setDescription('');
   };
 
   return (
