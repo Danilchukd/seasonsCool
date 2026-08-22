@@ -11,6 +11,16 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
   const [type, setType] = useState('movie');
   const [year, setYear] = useState('');
   const [description, setDescription] = useState('');
+  const [filePath, setFilePath] = useState<string | null>(null);
+
+  const handleSelectFile = async () => {
+  const selectedFile =
+    await window.electronAPI.selectMediaFile();
+
+  if (selectedFile) {
+    setFilePath(selectedFile);
+  }
+};
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -26,12 +36,14 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
       type,
       year: year ? Number(year) : null,
       description: description || null,
+      filePath,
     });
 
     setTitle('');
     setType('movie');
     setYear('');
     setDescription('');
+    setFilePath(null);
   };
 
   return (
@@ -65,7 +77,23 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
           <option value="series">Сериал</option>
           <option value="cartoon">Мультфильм</option>
           <option value="game">Игра</option>
+          <option value="clip">Клип</option>
         </select>
+      </div>
+
+      <div>
+        <label>Файл</label>
+
+        <button
+          type="button"
+          onClick={handleSelectFile}
+        >
+          Выбрать файл
+        </button>
+
+        {filePath && (
+          <p>{filePath}</p>
+        )}
       </div>
 
       <button type="submit">

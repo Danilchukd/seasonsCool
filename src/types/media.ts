@@ -15,6 +15,7 @@ export interface CreateMediaInput {
   type: string;
   year: number | null;
   description: string | null;
+  filePath: string | null;
 }
 
 export interface UpdateMediaInput {
@@ -23,4 +24,5 @@ export interface UpdateMediaInput {
   type: string;
   year: number | null;
   description: string | null;
+  filePath: string | null;
 }

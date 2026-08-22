@@ -49,6 +49,7 @@ export function validateCreateMediaInput(
     type,
     year,
     description,
+    filePath,
   } = input;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
@@ -64,6 +65,7 @@ export function validateCreateMediaInput(
     type: type.trim(),
     year: validateYear(year),
     description: validateDescription(description),
+    filePath: validateFilePath(filePath),
   };
 }
 
@@ -89,6 +91,22 @@ export function validateUpdateMediaInput(
     id,
     ...media,
   };
+}
+
+function validateFilePath(
+  value: unknown,
+): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error('Media file path must be a string');
+  }
+
+  const filePath = value.trim();
+
+  return filePath.length > 0 ? filePath : null;
 }
 
 export function validateMediaId(id: unknown): number {
