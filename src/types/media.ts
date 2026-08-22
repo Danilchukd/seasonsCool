@@ -13,10 +13,14 @@ export interface MediaRecord {
 export interface CreateMediaInput {
   title: string;
   type: string;
+  year: number | null;
+  description: string | null;
 }
 
 export interface UpdateMediaInput {
   id: number;
   title: string;
   type: string;
+  year: number | null;
+  description: string | null;
 }

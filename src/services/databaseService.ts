@@ -69,14 +69,18 @@ export function addMedia(
   const statement = db.prepare(`
     INSERT INTO media (
       title,
-      type
+      type,
+      year,
+      description
     )
-    VALUES (?, ?)
+    VALUES (?, ?, ?, ?)
   `);
 
   const result = statement.run(
     media.title,
     media.type,
+    media.year,
+    media.description,
   );
 
   return Number(result.lastInsertRowid);
@@ -125,13 +129,17 @@ export function updateMedia(
     UPDATE media
     SET
       title = ?,
-      type = ?
+      type = ?,
+      year = ?,
+      description = ?
     WHERE id = ?
   `);
 
   const result = statement.run(
     media.title,
     media.type,
+    media.year,
+    media.description,
     media.id,
   );
 
