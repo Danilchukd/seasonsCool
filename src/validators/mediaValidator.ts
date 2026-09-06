@@ -37,6 +37,24 @@ function validateDescription(value: unknown): string | null {
   return description.length > 0 ? description : null;
 }
 
+function validatePosterPath(
+  value: unknown,
+): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    throw new Error('Poster path must be a string');
+  }
+
+  const posterPath = value.trim();
+
+  return posterPath.length > 0
+    ? posterPath
+    : null;
+}
+
 export function validateCreateMediaInput(
   input: unknown,
 ): CreateMediaInput {
@@ -50,6 +68,7 @@ export function validateCreateMediaInput(
     year,
     description,
     filePath,
+    posterPath,
   } = input;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
@@ -66,6 +85,7 @@ export function validateCreateMediaInput(
     year: validateYear(year),
     description: validateDescription(description),
     filePath: validateFilePath(filePath),
+    posterPath: validatePosterPath(posterPath),
   };
 }
 
