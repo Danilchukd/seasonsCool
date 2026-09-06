@@ -22,4 +22,9 @@ export interface ElectronAPI {
 
   selectMediaFile: () => Promise<string | null>;
   openMediaFile: (filePath: string) => Promise<boolean>;
+  selectPosterFile: () => Promise<string | null>;
+
+  getPosterDataUrl: (
+    posterPath: string,
+  ) => Promise<string | null>;
 }

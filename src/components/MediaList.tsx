@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
+import PosterPreview from './PosterPreview';
+
 import type {
   MediaRecord,
   UpdateMediaInput,
@@ -10,6 +12,29 @@ interface MediaListProps {
   media: MediaRecord[];
   onUpdate: (media: UpdateMediaInput) => Promise<boolean>;
   onDelete: (id: number) => Promise<void>;
+}
+
+function getTypeLabel(type: string) {
+  switch (type) {
+    case 'movie':
+      return 'Фильм';
+
+    case 'series':
+      return 'Сериал';
+
+    case 'cartoon':
+      return 'Мультфильм';
+
+    case 'game':
+      return 'Игра';
+
+    default:
+      return type;
+  }
+}
+
+function getFileName(filePath: string) {
+  return filePath.split(/[\\/]/).pop() ?? filePath;
 }
 
 export default function MediaList({
@@ -23,8 +48,14 @@ export default function MediaList({
   const [editTitle, setEditTitle] = useState('');
   const [editType, setEditType] = useState('movie');
   const [editYear, setEditYear] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editFilePath, setEditFilePath] = useState<string | null>(null);
+  const [editDescription, setEditDescription] =
+    useState('');
+
+  const [editFilePath, setEditFilePath] =
+    useState<string | null>(null);
+
+  const [editPosterPath, setEditPosterPath] =
+    useState<string | null>(null);
 
   const startEditing = (item: MediaRecord) => {
     setEditingId(item.id);
@@ -33,6 +64,7 @@ export default function MediaList({
     setEditYear(item.year?.toString() ?? '');
     setEditDescription(item.description ?? '');
     setEditFilePath(item.file_path);
+    setEditPosterPath(item.poster_path);
   };
 
   const cancelEditing = () => {
@@ -42,6 +74,34 @@ export default function MediaList({
     setEditYear('');
     setEditDescription('');
     setEditFilePath(null);
+    setEditPosterPath(null);
+  };
+
+  const handleSelectEditFile = async () => {
+    const selectedFile =
+      await window.electronAPI.selectMediaFile();
+
+    if (selectedFile) {
+      setEditFilePath(selectedFile);
+    }
+  };
+
+  const handleSelectEditPoster = async () => {
+    const selectedPoster =
+      await window.electronAPI.selectPosterFile();
+
+    if (selectedPoster) {
+      setEditPosterPath(selectedPoster);
+    }
+  };
+
+  const handleOpenFile = async (filePath: string) => {
+    const opened =
+      await window.electronAPI.openMediaFile(filePath);
+
+    if (!opened) {
+      console.error('Failed to open media file');
+    }
   };
 
   const handleSubmit = async (
@@ -58,9 +118,12 @@ export default function MediaList({
       id,
       title: editTitle,
       type: editType,
-      year: editYear ? Number(editYear) : null,
+      year: editYear
+        ? Number(editYear)
+        : null,
       description: editDescription || null,
       filePath: editFilePath,
+      posterPath: editPosterPath,
     });
 
     if (updated) {
@@ -68,42 +131,43 @@ export default function MediaList({
     }
   };
 
-  const handleSelectEditFile = async () => {
-    const selectedFile =
-      await window.electronAPI.selectMediaFile();
-
-    if (selectedFile) {
-      setEditFilePath(selectedFile);
-    }
-  };
-
-  const handleOpenFile = async (filePath: string) => {
-    const opened =
-      await window.electronAPI.openMediaFile(filePath);
-
-    if (!opened) {
-      console.error('Failed to open media file');
-    }
-  };
-
   if (media.length === 0) {
-    return <p>Библиотека пуста.</p>;
+    return (
+      <p className="media-empty">
+        Библиотека пока пуста.
+      </p>
+    );
   }
 
   return (
-    <ul>
+    <div className="media-grid">
       {media.map((item) => (
-        <li key={item.id}>
+        <article
+          className="media-card"
+          key={item.id}
+        >
           {editingId === item.id ? (
             <form
+              className="media-edit-form"
               onSubmit={(event) =>
                 handleSubmit(event, item.id)
               }
             >
-              <div>
-                <label>
-                  Название
-                </label>
+              <div className="media-edit-poster">
+                {editPosterPath ? (
+                  <PosterPreview
+                    posterPath={editPosterPath}
+                    alt={editTitle || 'Постер'}
+                  />
+                ) : (
+                  <div className="media-poster-placeholder">
+                    Нет постера
+                  </div>
+                )}
+              </div>
+
+              <label>
+                Название
 
                 <input
                   type="text"
@@ -113,12 +177,10 @@ export default function MediaList({
                   }
                   required
                 />
-              </div>
+              </label>
 
-              <div>
-                <label>
-                  Тип
-                </label>
+              <label>
+                Тип
 
                 <select
                   value={editType}
@@ -141,17 +203,11 @@ export default function MediaList({
                   <option value="game">
                     Игра
                   </option>
-
-                  <option value="clip">
-                    Клип
-                  </option>
                 </select>
-              </div>
+              </label>
 
-              <div>
-                <label>
-                  Год
-                </label>
+              <label>
+                Год
 
                 <input
                   type="number"
@@ -162,94 +218,151 @@ export default function MediaList({
                   placeholder="2001"
                   min="1"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label>
-                  Описание
-                </label>
+              <label>
+                Описание
 
                 <textarea
                   value={editDescription}
                   onChange={(event) =>
-                    setEditDescription(event.target.value)
+                    setEditDescription(
+                      event.target.value,
+                    )
                   }
                   placeholder="Описание"
                 />
-              </div>
+              </label>
 
-              <div>
-                <label>Файл</label>
+              <div className="media-edit-section">
+                <span>Видео</span>
 
                 <button
                   type="button"
                   onClick={handleSelectEditFile}
                 >
-                  Выбрать другой файл
+                  Выбрать файл
                 </button>
 
                 {editFilePath && (
-                  <p>{editFilePath}</p>
+                  <small>
+                    {getFileName(editFilePath)}
+                  </small>
                 )}
               </div>
 
-              <button type="submit">
-                Сохранить
-              </button>
+              <div className="media-edit-section">
+                <span>Постер</span>
 
-              <button
-                type="button"
-                onClick={cancelEditing}
-              >
-                Отмена
-              </button>
+                <button
+                  type="button"
+                  onClick={handleSelectEditPoster}
+                >
+                  Выбрать постер
+                </button>
+
+                {editPosterPath && (
+                  <small>
+                    {getFileName(editPosterPath)}
+                  </small>
+                )}
+              </div>
+
+              <div className="media-edit-actions">
+                <button type="submit">
+                  Сохранить
+                </button>
+
+                <button
+                  type="button"
+                  onClick={cancelEditing}
+                >
+                  Отмена
+                </button>
+              </div>
             </form>
           ) : (
             <>
-              <div>
-                <strong>{item.title}</strong>
-                {' — '}
-                {item.type}
-
-                {item.year !== null && (
-                  <span> ({item.year})</span>
-                )}
-
-                {item.description && (
-                  <p>{item.description}</p>
-                )}
-
-                {item.file_path && (
-                  <div>
-                    <p>
-                      Файл: {item.file_path}
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={() => handleOpenFile(item.file_path!)}
-                    >
-                      Открыть
-                    </button>
+              <div className="media-card-poster">
+                {item.poster_path ? (
+                  <PosterPreview
+                    posterPath={item.poster_path}
+                    alt={item.title}
+                  />
+                ) : (
+                  <div className="media-poster-placeholder">
+                    Нет постера
                   </div>
                 )}
               </div>
 
-              <button
-                onClick={() => startEditing(item)}
-              >
-                Изменить
-              </button>
+              <div className="media-card-content">
+                <h3 className="media-card-title">
+                  {item.title}
+                </h3>
 
-              <button
-                onClick={() => onDelete(item.id)}
-              >
-                Удалить
-              </button>
+                <div className="media-card-meta">
+                  <span>
+                    {getTypeLabel(item.type)}
+                  </span>
+
+                  {item.year !== null && (
+                    <>
+                      <span>•</span>
+                      <span>{item.year}</span>
+                    </>
+                  )}
+                </div>
+
+                {item.description && (
+                  <p className="media-card-description">
+                    {item.description}
+                  </p>
+                )}
+
+                {item.file_path && (
+                  <p className="media-card-file">
+                    {getFileName(item.file_path)}
+                  </p>
+                )}
+
+                <div className="media-card-actions">
+                  {item.file_path && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenFile(
+                          item.file_path!,
+                        )
+                      }
+                    >
+                      Открыть
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      startEditing(item)
+                    }
+                  >
+                    Изменить
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onDelete(item.id)
+                    }
+                  >
+                    Удалить
+                  </button>
+                </div>
+              </div>
             </>
           )}
-        </li>
+        </article>
       ))}
-    </ul>
+    </div>
   );
 }

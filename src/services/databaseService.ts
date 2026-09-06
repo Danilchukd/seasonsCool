@@ -72,9 +72,10 @@ export function addMedia(
       type,
       year,
       description,
-      file_path
+      file_path,
+      poster_path
     )
-    VALUES (?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
 
   const result = statement.run(
@@ -83,6 +84,7 @@ export function addMedia(
     media.year,
     media.description,
     media.filePath,
+    media.posterPath,
   );
 
   return Number(result.lastInsertRowid);
@@ -134,7 +136,8 @@ export function updateMedia(
       type = ?,
       year = ?,
       description = ?,
-      file_path = ?
+      file_path = ?,
+      poster_path = ?
     WHERE id = ?
   `);
 
@@ -144,6 +147,7 @@ export function updateMedia(
     media.year,
     media.description,
     media.filePath,
+    media.posterPath,
     media.id,
   );
 

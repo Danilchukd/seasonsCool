@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { CreateMediaInput } from '../types/media';
+import PosterPreview from './PosterPreview';
 
 interface MediaFormProps {
   onAdd: (media: CreateMediaInput) => Promise<void>;
@@ -12,15 +13,25 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
   const [year, setYear] = useState('');
   const [description, setDescription] = useState('');
   const [filePath, setFilePath] = useState<string | null>(null);
+  const [posterPath, setPosterPath] = useState<string | null>(null);
 
   const handleSelectFile = async () => {
-  const selectedFile =
-    await window.electronAPI.selectMediaFile();
+    const selectedFile =
+      await window.electronAPI.selectMediaFile();
 
-  if (selectedFile) {
-    setFilePath(selectedFile);
-  }
-};
+    if (selectedFile) {
+      setFilePath(selectedFile);
+    }
+  };
+
+  const handleSelectPoster = async () => {
+    const selectedPoster =
+      await window.electronAPI.selectPosterFile();
+
+    if (selectedPoster) {
+      setPosterPath(selectedPoster);
+    }
+  };
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -37,6 +48,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
       year: year ? Number(year) : null,
       description: description || null,
       filePath,
+      posterPath,
     });
 
     setTitle('');
@@ -44,6 +56,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
     setYear('');
     setDescription('');
     setFilePath(null);
+    setPosterPath(null);
   };
 
   return (
@@ -93,6 +106,28 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
 
         {filePath && (
           <p>{filePath}</p>
+        )}
+      </div>
+
+      <div>
+  <p>Постер</p>
+
+        <button
+          type="button"
+          onClick={handleSelectPoster}
+        >
+          Выбрать постер
+        </button>
+
+        {posterPath && (
+          <>
+            <p>{posterPath}</p>
+
+            <PosterPreview
+              posterPath={posterPath}
+              alt={title || 'Постер'}
+            />
+          </>
         )}
       </div>
 

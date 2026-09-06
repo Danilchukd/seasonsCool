@@ -18,8 +18,17 @@ const electronAPI: ElectronAPI = {
   selectMediaFile: () =>
     ipcRenderer.invoke('file:selectMedia'),
 
+  selectPosterFile: () =>
+    ipcRenderer.invoke('file:selectPoster'),
+
   openMediaFile: (filePath) =>
     ipcRenderer.invoke('file:openMedia', filePath),
+
+  getPosterDataUrl: (posterPath) =>
+    ipcRenderer.invoke(
+      'file:getPosterDataUrl',
+      posterPath,
+    ),
 };
 
 contextBridge.exposeInMainWorld(

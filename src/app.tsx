@@ -14,14 +14,19 @@ import type {
 } from './types/media';
 
 export default function App() {
-  const [addedMediaId, setAddedMediaId] =
-    useState<number | null>(null);
-
   const [media, setMedia] =
     useState<MediaRecord[]>([]);
 
+  const [isAddFormOpen, setIsAddFormOpen] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState<string | null>(null);
+
   const loadMedia = useCallback(async () => {
-    const result = await window.electronAPI.getMedia();
+    const result =
+      await window.electronAPI.getMedia();
+
     setMedia(result);
   }, []);
 
@@ -32,15 +37,19 @@ export default function App() {
   const handleAddMedia = async (
     newMedia: CreateMediaInput,
   ) => {
-    const id = await window.electronAPI.addMedia(newMedia);
-
-    setAddedMediaId(id);
+    await window.electronAPI.addMedia(newMedia);
 
     await loadMedia();
+
+    setMessage(`Добавлено: ${newMedia.title}`);
+    setIsAddFormOpen(false);
   };
 
-  const handleDeleteMedia = async (id: number) => {
-    const deleted = await window.electronAPI.deleteMedia(id);
+  const handleDeleteMedia = async (
+    id: number,
+  ) => {
+    const deleted =
+      await window.electronAPI.deleteMedia(id);
 
     if (deleted) {
       await loadMedia();
@@ -51,7 +60,9 @@ export default function App() {
     updatedMedia: UpdateMediaInput,
   ): Promise<boolean> => {
     const updated =
-      await window.electronAPI.updateMedia(updatedMedia);
+      await window.electronAPI.updateMedia(
+        updatedMedia,
+      );
 
     if (updated) {
       await loadMedia();
@@ -60,27 +71,89 @@ export default function App() {
     return updated;
   };
 
+  const handleOpenAddForm = () => {
+    setMessage(null);
+    setIsAddFormOpen(true);
+  };
+
   return (
-    <div>
-      <h1>SeasonsCool</h1>
+    <main className="app">
+      <header className="app-header">
+        <div>
+          <h1 className="app-title">
+            SeasonsCool
+          </h1>
 
-      <h2>Добавить медиа</h2>
+          <p className="app-subtitle">
+            Твоя личная медиатека
+          </p>
+        </div>
 
-      <MediaForm onAdd={handleAddMedia} />
+        <button
+          className="add-media-button"
+          type="button"
+          onClick={handleOpenAddForm}
+          disabled={isAddFormOpen}
+        >
+          + Добавить медиа
+        </button>
+      </header>
 
-      {addedMediaId !== null && (
-        <p>
-          Запись добавлена. ID: {addedMediaId}
-        </p>
+      {isAddFormOpen && (
+        <section className="media-form-panel">
+          <div className="media-form-header">
+            <div>
+              <h2>Добавить медиа</h2>
+
+              <p>
+                Добавь фильм, сериал, игру,
+                клип или другой контент.
+              </p>
+            </div>
+
+            <button
+              className="media-form-close"
+              type="button"
+              onClick={() =>
+                setIsAddFormOpen(false)
+              }
+              aria-label="Закрыть форму"
+            >
+              ×
+            </button>
+          </div>
+
+          <MediaForm
+            onAdd={handleAddMedia}
+          />
+        </section>
       )}
 
-      <h2>Библиотека</h2>
+      {message && (
+        <div className="app-message">
+          {message}
+        </div>
+      )}
 
-      <MediaList
-        media={media}
-        onUpdate={handleUpdateMedia}
-        onDelete={handleDeleteMedia}
-      />
-    </div>
+      <section className="library-section">
+        <div className="library-header">
+          <div>
+            <h2>Библиотека</h2>
+
+            <p>
+              {media.length === 0
+                ? 'Здесь пока ничего нет'
+                : `Всего: ${media.length}`}
+            </p>
+          </div>
+        </div>
+
+        <MediaList
+          media={media}
+          onUpdate={handleUpdateMedia}
+          onDelete={handleDeleteMedia}
+        />
+      </section>
+    </main>
   );
 }
