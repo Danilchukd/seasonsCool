@@ -7,6 +7,11 @@ import {
 import MediaForm from './components/MediaForm';
 import MediaList from './components/MediaList';
 
+import {
+  getCurrentSeason,
+  getSeasonLabel,
+} from './utils/season';
+
 import type {
   CreateMediaInput,
   MediaRecord,
@@ -22,6 +27,13 @@ export default function App() {
 
   const [message, setMessage] =
     useState<string | null>(null);
+
+  const currentSeason = getCurrentSeason();
+
+  const currentSeasonMedia = media.filter(
+    (item) =>
+      item.seasons.includes(currentSeason),
+  );
 
   const loadMedia = useCallback(async () => {
     const result =
@@ -85,7 +97,7 @@ export default function App() {
           </h1>
 
           <p className="app-subtitle">
-            Твоя личная медиатека
+            Сейчас: {getSeasonLabel(currentSeason)}
           </p>
         </div>
 
@@ -134,6 +146,26 @@ export default function App() {
           {message}
         </div>
       )}
+
+      <section className="season-section">
+        <div className="season-header">
+          <div>
+            <span className="season-label">
+              Текущий сезон
+            </span>
+
+            <h2>
+              {getSeasonLabel(currentSeason)}
+            </h2>
+
+            <p>
+              {currentSeasonMedia.length === 0
+                ? 'Для этого сезона пока ничего не добавлено'
+                : `Подходит материалов: ${currentSeasonMedia.length}`}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="library-section">
         <div className="library-header">

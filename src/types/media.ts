@@ -8,6 +8,7 @@ export interface MediaRecord {
   duration_minutes: number | null;
   description: string | null;
   created_at: string;
+  seasons: Season[];
 }
 
 export interface CreateMediaInput {
@@ -17,6 +18,7 @@ export interface CreateMediaInput {
   description: string | null;
   filePath: string | null;
   posterPath: string | null;
+  seasons: Season[];
 }
 
 export interface UpdateMediaInput {
@@ -27,4 +29,11 @@ export interface UpdateMediaInput {
   description: string | null;
   filePath: string | null;
   posterPath: string | null;
+  seasons: Season[];
 }
+
+export type Season =
+  | 'winter'
+  | 'spring'
+  | 'summer'
+  | 'autumn';

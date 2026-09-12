@@ -364,3 +364,45 @@ button {
 .media-empty {
   color: #999;
 }
+
+.media-card-seasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.media-card-seasons span {
+  padding: 4px 7px;
+  border: 1px solid #3d3d3d;
+  border-radius: 999px;
+  background: #252525;
+  color: #bdbdbd;
+  font-size: 12px;
+}
+
+.season-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  border: 1px solid #303030;
+  border-radius: 14px;
+  background: #181818;
+}
+
+.season-header h2 {
+  margin: 6px 0;
+  font-size: 28px;
+}
+
+.season-header p {
+  margin: 0;
+  color: #8f8f8f;
+  font-size: 14px;
+}
+
+.season-label {
+  color: #a5a5a5;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
