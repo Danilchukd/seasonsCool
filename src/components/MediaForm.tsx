@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CreateMediaInput } from '../types/media';
+import type { CreateMediaInput, Season, } from '../types/media';
 import PosterPreview from './PosterPreview';
 
 interface MediaFormProps {
@@ -14,6 +14,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
   const [description, setDescription] = useState('');
   const [filePath, setFilePath] = useState<string | null>(null);
   const [posterPath, setPosterPath] = useState<string | null>(null);
+  const [seasons, setSeasons] = useState<Season[]>([]);
 
   const handleSelectFile = async () => {
     const selectedFile =
@@ -33,6 +34,18 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
     }
   };
 
+  const toggleSeason = (
+    season: Season,
+  ) => {
+    setSeasons((current) =>
+      current.includes(season)
+        ? current.filter(
+          (item) => item !== season,
+        )
+        : [...current, season],
+    );
+  };
+
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
   ) => {
@@ -49,6 +62,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
       description: description || null,
       filePath,
       posterPath,
+      seasons,
     });
 
     setTitle('');
@@ -57,6 +71,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
     setDescription('');
     setFilePath(null);
     setPosterPath(null);
+    setSeasons([]);
   };
 
   return (
@@ -74,6 +89,46 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
           placeholder="Например, Shrek"
           required
         />
+      </div>
+
+      <div>
+        <p>Сезоны</p>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={seasons.includes('winter')}
+            onChange={() => toggleSeason('winter')}
+          />
+          Зима
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={seasons.includes('spring')}
+            onChange={() => toggleSeason('spring')}
+          />
+          Весна
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={seasons.includes('summer')}
+            onChange={() => toggleSeason('summer')}
+          />
+          Лето
+        </label>
+
+        <label>
+          <input
+            type="checkbox"
+            checked={seasons.includes('autumn')}
+            onChange={() => toggleSeason('autumn')}
+          />
+          Осень
+        </label>
       </div>
 
       <div>

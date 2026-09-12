@@ -4,6 +4,7 @@ import path from 'node:path';
 import type {
   CreateMediaInput,
   MediaRecord,
+  Season,
   UpdateMediaInput,
 } from '../types/media';
 
@@ -22,6 +23,15 @@ function initializeSchema(db: Database.Database) {
       description TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS media_seasons (
+      media_id INTEGER NOT NULL,
+      season TEXT NOT NULL,
+      PRIMARY KEY (media_id, season),
+      FOREIGN KEY (media_id)
+        REFERENCES media(id)
+        ON DELETE CASCADE
+    );
   `);
 }
 
@@ -39,6 +49,7 @@ export function initializeDatabase(): void {
 
   database = new Database(databasePath);
 
+  database.pragma('foreign_keys = ON');
   database.pragma('journal_mode = WAL');
 
   initializeSchema(database);
@@ -87,28 +98,63 @@ export function addMedia(
     media.posterPath,
   );
 
-  return Number(result.lastInsertRowid);
+  const mediaId = Number(result.lastInsertRowid);
+
+  saveMediaSeasons(
+    db,
+    mediaId,
+    media.seasons,
+  );
+
+  return mediaId;
 }
 
 export function getMedia(): MediaRecord[] {
+  
+  interface MediaDatabaseRow {
+  id: number;
+  title: string;
+  type: string;
+  file_path: string | null;
+  poster_path: string | null;
+  year: number | null;
+  duration_minutes: number | null;
+  description: string | null;
+  created_at: string;
+  seasons: string | null;
+}
+
+
   const db = getDatabase();
 
   const statement = db.prepare(`
     SELECT
-      id,
-      title,
-      type,
-      file_path,
-      poster_path,
-      year,
-      duration_minutes,
-      description,
-      created_at
-    FROM media
-    ORDER BY id
+      m.id,
+      m.title,
+      m.type,
+      m.file_path,
+      m.poster_path,
+      m.year,
+      m.duration_minutes,
+      m.description,
+      m.created_at,
+      GROUP_CONCAT(ms.season) AS seasons
+    FROM media m
+    LEFT JOIN media_seasons ms
+      ON ms.media_id = m.id
+    GROUP BY m.id
+    ORDER BY m.id
   `);
 
-  return statement.all() as MediaRecord[];
+  const rows =
+    statement.all() as MediaDatabaseRow[];
+
+  return rows.map((row) => ({
+    ...row,
+    seasons: row.seasons
+      ? row.seasons.split(',') as Season[]
+      : [],
+  }));
 }
 
 export function deleteMedia(id: number): boolean {
@@ -151,5 +197,38 @@ export function updateMedia(
     media.id,
   );
 
+  if (result.changes > 0) {
+    saveMediaSeasons(
+      db,
+      media.id,
+      media.seasons,
+    );
+  }
+
   return result.changes > 0;
+}
+
+function saveMediaSeasons(
+  db: Database.Database,
+  mediaId: number,
+  seasons: Season[],
+) {
+  const deleteStatement = db.prepare(`
+    DELETE FROM media_seasons
+    WHERE media_id = ?
+  `);
+
+  const insertStatement = db.prepare(`
+    INSERT INTO media_seasons (
+      media_id,
+      season
+    )
+    VALUES (?, ?)
+  `);
+
+  deleteStatement.run(mediaId);
+
+  for (const season of seasons) {
+    insertStatement.run(mediaId, season);
+  }
 }

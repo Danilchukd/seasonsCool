@@ -3,14 +3,19 @@ import type { FormEvent } from 'react';
 
 import PosterPreview from './PosterPreview';
 
+import { getSeasonLabel } from '../utils/season';
+
 import type {
   MediaRecord,
+  Season,
   UpdateMediaInput,
 } from '../types/media';
 
 interface MediaListProps {
   media: MediaRecord[];
-  onUpdate: (media: UpdateMediaInput) => Promise<boolean>;
+  onUpdate: (
+    media: UpdateMediaInput,
+  ) => Promise<boolean>;
   onDelete: (id: number) => Promise<void>;
 }
 
@@ -45,62 +50,126 @@ export default function MediaList({
   const [editingId, setEditingId] =
     useState<number | null>(null);
 
-  const [editTitle, setEditTitle] = useState('');
-  const [editType, setEditType] = useState('movie');
-  const [editYear, setEditYear] = useState('');
-  const [editDescription, setEditDescription] =
+  const [editTitle, setEditTitle] =
     useState('');
 
-  const [editFilePath, setEditFilePath] =
-    useState<string | null>(null);
+  const [editType, setEditType] =
+    useState('movie');
 
-  const [editPosterPath, setEditPosterPath] =
-    useState<string | null>(null);
+  const [editYear, setEditYear] =
+    useState('');
 
-  const startEditing = (item: MediaRecord) => {
+  const [
+    editDescription,
+    setEditDescription,
+  ] = useState('');
+
+  const [
+    editFilePath,
+    setEditFilePath,
+  ] = useState<string | null>(null);
+
+  const [
+    editPosterPath,
+    setEditPosterPath,
+  ] = useState<string | null>(null);
+
+  const [
+    editSeasons,
+    setEditSeasons,
+  ] = useState<Season[]>([]);
+
+  const startEditing = (
+    item: MediaRecord,
+  ) => {
     setEditingId(item.id);
     setEditTitle(item.title);
     setEditType(item.type);
-    setEditYear(item.year?.toString() ?? '');
-    setEditDescription(item.description ?? '');
-    setEditFilePath(item.file_path);
-    setEditPosterPath(item.poster_path);
+
+    setEditYear(
+      item.year?.toString() ?? '',
+    );
+
+    setEditDescription(
+      item.description ?? '',
+    );
+
+    setEditFilePath(
+      item.file_path,
+    );
+
+    setEditPosterPath(
+      item.poster_path,
+    );
+
+    setEditSeasons(
+      item.seasons,
+    );
   };
 
   const cancelEditing = () => {
     setEditingId(null);
+
     setEditTitle('');
     setEditType('movie');
     setEditYear('');
     setEditDescription('');
+
     setEditFilePath(null);
     setEditPosterPath(null);
+
+    setEditSeasons([]);
   };
 
-  const handleSelectEditFile = async () => {
-    const selectedFile =
-      await window.electronAPI.selectMediaFile();
-
-    if (selectedFile) {
-      setEditFilePath(selectedFile);
-    }
+  const toggleEditSeason = (
+    season: Season,
+  ) => {
+    setEditSeasons((current) =>
+      current.includes(season)
+        ? current.filter(
+            (item) => item !== season,
+          )
+        : [...current, season],
+    );
   };
 
-  const handleSelectEditPoster = async () => {
-    const selectedPoster =
-      await window.electronAPI.selectPosterFile();
+  const handleSelectEditFile =
+    async () => {
+      const selectedFile =
+        await window.electronAPI
+          .selectMediaFile();
 
-    if (selectedPoster) {
-      setEditPosterPath(selectedPoster);
-    }
-  };
+      if (selectedFile) {
+        setEditFilePath(
+          selectedFile,
+        );
+      }
+    };
 
-  const handleOpenFile = async (filePath: string) => {
+  const handleSelectEditPoster =
+    async () => {
+      const selectedPoster =
+        await window.electronAPI
+          .selectPosterFile();
+
+      if (selectedPoster) {
+        setEditPosterPath(
+          selectedPoster,
+        );
+      }
+    };
+
+  const handleOpenFile = async (
+    filePath: string,
+  ) => {
     const opened =
-      await window.electronAPI.openMediaFile(filePath);
+      await window.electronAPI
+        .openMediaFile(filePath);
 
     if (!opened) {
-      console.error('Failed to open media file');
+      console.error(
+        'Failed to open media file',
+      );
     }
   };
 
@@ -118,12 +187,18 @@ export default function MediaList({
       id,
       title: editTitle,
       type: editType,
+
       year: editYear
         ? Number(editYear)
         : null,
-      description: editDescription || null,
+
+      description:
+        editDescription || null,
+
       filePath: editFilePath,
       posterPath: editPosterPath,
+
+      seasons: editSeasons,
     });
 
     if (updated) {
@@ -150,14 +225,22 @@ export default function MediaList({
             <form
               className="media-edit-form"
               onSubmit={(event) =>
-                handleSubmit(event, item.id)
+                handleSubmit(
+                  event,
+                  item.id,
+                )
               }
             >
               <div className="media-edit-poster">
                 {editPosterPath ? (
                   <PosterPreview
-                    posterPath={editPosterPath}
-                    alt={editTitle || 'Постер'}
+                    posterPath={
+                      editPosterPath
+                    }
+                    alt={
+                      editTitle ||
+                      'Постер'
+                    }
                   />
                 ) : (
                   <div className="media-poster-placeholder">
@@ -173,7 +256,9 @@ export default function MediaList({
                   type="text"
                   value={editTitle}
                   onChange={(event) =>
-                    setEditTitle(event.target.value)
+                    setEditTitle(
+                      event.target.value,
+                    )
                   }
                   required
                 />
@@ -185,7 +270,9 @@ export default function MediaList({
                 <select
                   value={editType}
                   onChange={(event) =>
-                    setEditType(event.target.value)
+                    setEditType(
+                      event.target.value,
+                    )
                   }
                 >
                   <option value="movie">
@@ -213,7 +300,9 @@ export default function MediaList({
                   type="number"
                   value={editYear}
                   onChange={(event) =>
-                    setEditYear(event.target.value)
+                    setEditYear(
+                      event.target.value,
+                    )
                   }
                   placeholder="2001"
                   min="1"
@@ -224,7 +313,9 @@ export default function MediaList({
                 Описание
 
                 <textarea
-                  value={editDescription}
+                  value={
+                    editDescription
+                  }
                   onChange={(event) =>
                     setEditDescription(
                       event.target.value,
@@ -235,18 +326,98 @@ export default function MediaList({
               </label>
 
               <div className="media-edit-section">
+                <span>Сезоны</span>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={
+                      editSeasons.includes(
+                        'winter',
+                      )
+                    }
+                    onChange={() =>
+                      toggleEditSeason(
+                        'winter',
+                      )
+                    }
+                  />
+
+                  Зима
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={
+                      editSeasons.includes(
+                        'spring',
+                      )
+                    }
+                    onChange={() =>
+                      toggleEditSeason(
+                        'spring',
+                      )
+                    }
+                  />
+
+                  Весна
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={
+                      editSeasons.includes(
+                        'summer',
+                      )
+                    }
+                    onChange={() =>
+                      toggleEditSeason(
+                        'summer',
+                      )
+                    }
+                  />
+
+                  Лето
+                </label>
+
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={
+                      editSeasons.includes(
+                        'autumn',
+                      )
+                    }
+                    onChange={() =>
+                      toggleEditSeason(
+                        'autumn',
+                      )
+                    }
+                  />
+
+                  Осень
+                </label>
+              </div>
+
+              <div className="media-edit-section">
                 <span>Видео</span>
 
                 <button
                   type="button"
-                  onClick={handleSelectEditFile}
+                  onClick={
+                    handleSelectEditFile
+                  }
                 >
                   Выбрать файл
                 </button>
 
                 {editFilePath && (
                   <small>
-                    {getFileName(editFilePath)}
+                    {getFileName(
+                      editFilePath,
+                    )}
                   </small>
                 )}
               </div>
@@ -256,14 +427,18 @@ export default function MediaList({
 
                 <button
                   type="button"
-                  onClick={handleSelectEditPoster}
+                  onClick={
+                    handleSelectEditPoster
+                  }
                 >
                   Выбрать постер
                 </button>
 
                 {editPosterPath && (
                   <small>
-                    {getFileName(editPosterPath)}
+                    {getFileName(
+                      editPosterPath,
+                    )}
                   </small>
                 )}
               </div>
@@ -275,7 +450,9 @@ export default function MediaList({
 
                 <button
                   type="button"
-                  onClick={cancelEditing}
+                  onClick={
+                    cancelEditing
+                  }
                 >
                   Отмена
                 </button>
@@ -286,7 +463,9 @@ export default function MediaList({
               <div className="media-card-poster">
                 {item.poster_path ? (
                   <PosterPreview
-                    posterPath={item.poster_path}
+                    posterPath={
+                      item.poster_path
+                    }
                     alt={item.title}
                   />
                 ) : (
@@ -303,26 +482,51 @@ export default function MediaList({
 
                 <div className="media-card-meta">
                   <span>
-                    {getTypeLabel(item.type)}
+                    {getTypeLabel(
+                      item.type,
+                    )}
                   </span>
 
                   {item.year !== null && (
                     <>
                       <span>•</span>
-                      <span>{item.year}</span>
+
+                      <span>
+                        {item.year}
+                      </span>
                     </>
                   )}
                 </div>
 
+                {item.seasons.length > 0 && (
+                  <div className="media-card-seasons">
+                    {item.seasons.map(
+                      (season) => (
+                        <span
+                          key={season}
+                        >
+                          {getSeasonLabel(
+                            season,
+                          )}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                )}
+
                 {item.description && (
                   <p className="media-card-description">
-                    {item.description}
+                    {
+                      item.description
+                    }
                   </p>
                 )}
 
                 {item.file_path && (
                   <p className="media-card-file">
-                    {getFileName(item.file_path)}
+                    {getFileName(
+                      item.file_path,
+                    )}
                   </p>
                 )}
 
@@ -343,7 +547,9 @@ export default function MediaList({
                   <button
                     type="button"
                     onClick={() =>
-                      startEditing(item)
+                      startEditing(
+                        item,
+                      )
                     }
                   >
                     Изменить
@@ -352,7 +558,9 @@ export default function MediaList({
                   <button
                     type="button"
                     onClick={() =>
-                      onDelete(item.id)
+                      onDelete(
+                        item.id,
+                      )
                     }
                   >
                     Удалить

@@ -1,5 +1,6 @@
 import type {
   CreateMediaInput,
+  Season,
   UpdateMediaInput,
 } from '../types/media';
 
@@ -69,6 +70,7 @@ export function validateCreateMediaInput(
     description,
     filePath,
     posterPath,
+    seasons,
   } = input;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
@@ -86,7 +88,35 @@ export function validateCreateMediaInput(
     description: validateDescription(description),
     filePath: validateFilePath(filePath),
     posterPath: validatePosterPath(posterPath),
+    seasons: validateSeasons(seasons),
   };
+}
+
+const VALID_SEASONS: Season[] = [
+  'winter',
+  'spring',
+  'summer',
+  'autumn',
+];
+
+function validateSeasons(
+  value: unknown,
+): Season[] {
+  if (!Array.isArray(value)) {
+    throw new Error(
+      'Media seasons must be an array',
+    );
+  }
+
+  const seasons = value.filter(
+    (season): season is Season =>
+      typeof season === 'string' &&
+      VALID_SEASONS.includes(
+        season as Season,
+      ),
+  );
+
+  return [...new Set(seasons)];
 }
 
 export function validateUpdateMediaInput(
