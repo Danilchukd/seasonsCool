@@ -6,6 +6,8 @@ import {
 
 import MediaForm from './components/MediaForm';
 import MediaList from './components/MediaList';
+import SeasonHero from './components/SeasonHero';
+import SeasonSelector from './components/SeasonSelector';
 
 import {
   getCurrentSeason,
@@ -15,6 +17,7 @@ import {
 import type {
   CreateMediaInput,
   MediaRecord,
+  Season,
   UpdateMediaInput,
 } from './types/media';
 
@@ -30,9 +33,12 @@ export default function App() {
 
   const currentSeason = getCurrentSeason();
 
-  const currentSeasonMedia = media.filter(
+  const [selectedSeason, setSelectedSeason] =
+    useState<Season>(currentSeason);
+
+  const selectedSeasonMedia = media.filter(
     (item) =>
-      item.seasons.includes(currentSeason),
+      item.seasons.includes(selectedSeason),
   );
 
   const loadMedia = useCallback(async () => {
@@ -89,7 +95,10 @@ export default function App() {
   };
 
   return (
-    <main className="app">
+    <main
+      className="app"
+      data-season={selectedSeason}
+    >
       <header className="app-header">
         <div>
           <h1 className="app-title">
@@ -148,29 +157,31 @@ export default function App() {
       )}
 
       <section className="season-section">
-        <div className="season-header">
-          <div>
-            <span className="season-label">
-              Текущий сезон
-            </span>
+        <SeasonHero
+          season={selectedSeason}
+          mediaCount={selectedSeasonMedia.length}
+          isCurrentSeason={
+            selectedSeason === currentSeason
+          }
+        />
 
-            <h2>
-              {getSeasonLabel(currentSeason)}
-            </h2>
+        <SeasonSelector
+          selectedSeason={selectedSeason}
+          onSelect={setSelectedSeason}
+        />
 
-            <p>
-              {currentSeasonMedia.length === 0
-                ? 'Для этого сезона пока ничего не добавлено'
-                : `Подходит материалов: ${currentSeasonMedia.length}`}
-            </p>
-          </div>
-        </div>
+        <MediaList
+          media={selectedSeasonMedia}
+          onUpdate={handleUpdateMedia}
+          onDelete={handleDeleteMedia}
+          emptyMessage="Для этого сезона пока ничего не добавлено."
+        />
       </section>
 
       <section className="library-section">
         <div className="library-header">
           <div>
-            <h2>Библиотека</h2>
+            <h2>Вся библиотека</h2>
 
             <p>
               {media.length === 0

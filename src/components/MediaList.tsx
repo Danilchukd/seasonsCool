@@ -17,6 +17,7 @@ interface MediaListProps {
     media: UpdateMediaInput,
   ) => Promise<boolean>;
   onDelete: (id: number) => Promise<void>;
+  emptyMessage?: string;
 }
 
 function getTypeLabel(type: string) {
@@ -46,6 +47,7 @@ export default function MediaList({
   media,
   onUpdate,
   onDelete,
+  emptyMessage = 'Библиотека пока пуста.',
 }: MediaListProps) {
   const [editingId, setEditingId] =
     useState<number | null>(null);
@@ -206,13 +208,13 @@ export default function MediaList({
     }
   };
 
-  if (media.length === 0) {
-    return (
-      <p className="media-empty">
-        Библиотека пока пуста.
-      </p>
-    );
-  }
+if (media.length === 0) {
+  return (
+    <p className="media-empty">
+      {emptyMessage}
+    </p>
+  );
+}
 
   return (
     <div className="media-grid">
