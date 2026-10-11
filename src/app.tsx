@@ -8,6 +8,7 @@ import MediaForm from './components/MediaForm';
 import MediaList from './components/MediaList';
 import SeasonHero from './components/SeasonHero';
 import SeasonSelector from './components/SeasonSelector';
+import SeasonSuggestion from './components/SeasonSuggestion';
 
 import {
   getCurrentSeason,
@@ -170,12 +171,35 @@ export default function App() {
           onSelect={setSelectedSeason}
         />
 
-        <MediaList
+        <SeasonSuggestion
           media={selectedSeasonMedia}
-          onUpdate={handleUpdateMedia}
-          onDelete={handleDeleteMedia}
-          emptyMessage="Для этого сезона пока ничего не добавлено."
+          season={selectedSeason}
         />
+
+        <div className="season-media-section">
+          <div className="season-media-header">
+            <div>
+              <span className="season-media-label">
+                Подборка сезона
+              </span>
+
+              <h2>
+                {getSeasonLabel(selectedSeason)}
+              </h2>
+            </div>
+
+            <span className="season-media-count">
+              {selectedSeasonMedia.length}
+            </span>
+          </div>
+
+          <MediaList
+            media={selectedSeasonMedia}
+            onUpdate={handleUpdateMedia}
+            onDelete={handleDeleteMedia}
+            emptyMessage="Для этого сезона пока ничего не добавлено."
+          />
+        </div>
       </section>
 
       <section className="library-section">
