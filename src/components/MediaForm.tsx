@@ -150,6 +150,31 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
       </div>
 
       <div>
+        <label htmlFor="media-year">Год выпуска</label>
+
+        <input
+          id="media-year"
+          type="number"
+          min="1"
+          step="1"
+          value={year}
+          onChange={(event) => setYear(event.target.value)}
+          placeholder="Например, 2001"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="media-description">Описание</label>
+
+        <textarea
+          id="media-description"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="Короткое описание или личная заметка"
+        />
+      </div>
+
+      <div>
         <label>Файл</label>
 
         <button
