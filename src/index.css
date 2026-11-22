@@ -1023,6 +1023,23 @@ button {
   font-size: 12px;
 }
 
+.season-plans-delete-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.season-plans-delete-confirm span {
+  color: #d5d5d5;
+  font-size: 12px;
+}
+
+.season-plans-delete-confirm button:first-of-type {
+  border-color: #a65c5c;
+  color: #ffb7b7;
+}
+
 .season-plans-edit {
   display: flex;
   flex: 1;
