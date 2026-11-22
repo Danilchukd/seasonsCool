@@ -5,6 +5,7 @@ import type {
   CreateMediaInput,
   MediaRecord,
   Season,
+  SeasonPeriod,
   UpdateMediaInput,
 } from '../types/media';
 
@@ -32,6 +33,16 @@ function initializeSchema(db: Database.Database) {
         REFERENCES media(id)
         ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS media_periods (
+      media_id INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      PRIMARY KEY (media_id, period),
+      FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_media_periods_period
+      ON media_periods (period);
 
     CREATE TABLE IF NOT EXISTS season_plans (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -86,88 +97,69 @@ export function closeDatabase(): void {
   database = null;
 }
 
-export function addMedia(
-  media: CreateMediaInput,
-): number {
+export function addMedia(media: CreateMediaInput): number {
   const db = getDatabase();
 
-  const statement = db.prepare(`
+  const insert = db.prepare(`
     INSERT INTO media (
-      title,
-      type,
-      year,
-      description,
-      file_path,
-      poster_path
-    )
-    VALUES (?, ?, ?, ?, ?, ?)
+      title, type, year, description, file_path, poster_path
+    ) VALUES (?, ?, ?, ?, ?, ?)
   `);
 
-  const result = statement.run(
-    media.title,
-    media.type,
-    media.year,
-    media.description,
-    media.filePath,
-    media.posterPath,
-  );
+  return db.transaction(() => {
+    const result = insert.run(
+      media.title,
+      media.type,
+      media.year,
+      media.description,
+      media.filePath,
+      media.posterPath,
+    );
 
-  const mediaId = Number(result.lastInsertRowid);
+    const mediaId = Number(result.lastInsertRowid);
+    saveMediaSeasons(db, mediaId, media.seasons);
+    saveMediaPeriods(db, mediaId, media.periods);
 
-  saveMediaSeasons(
-    db,
-    mediaId,
-    media.seasons,
-  );
-
-  return mediaId;
+    return mediaId;
+  })();
 }
 
 export function getMedia(): MediaRecord[] {
-  
   interface MediaDatabaseRow {
-  id: number;
-  title: string;
-  type: string;
-  file_path: string | null;
-  poster_path: string | null;
-  year: number | null;
-  duration_minutes: number | null;
-  description: string | null;
-  created_at: string;
-  seasons: string | null;
-}
+    id: number;
+    title: string;
+    type: string;
+    file_path: string | null;
+    poster_path: string | null;
+    year: number | null;
+    duration_minutes: number | null;
+    description: string | null;
+    created_at: string;
+    seasons: string | null;
+    periods: string | null;
+  }
 
-
-  const db = getDatabase();
-
-  const statement = db.prepare(`
+  const rows = getDatabase().prepare(`
     SELECT
-      m.id,
-      m.title,
-      m.type,
-      m.file_path,
-      m.poster_path,
-      m.year,
-      m.duration_minutes,
-      m.description,
-      m.created_at,
-      GROUP_CONCAT(ms.season) AS seasons
+      m.*,
+      (
+        SELECT GROUP_CONCAT(ms.season)
+        FROM media_seasons ms
+        WHERE ms.media_id = m.id
+      ) AS seasons,
+      (
+        SELECT GROUP_CONCAT(mp.period)
+        FROM media_periods mp
+        WHERE mp.media_id = m.id
+      ) AS periods
     FROM media m
-    LEFT JOIN media_seasons ms
-      ON ms.media_id = m.id
-    GROUP BY m.id
     ORDER BY m.id
-  `);
-
-  const rows =
-    statement.all() as MediaDatabaseRow[];
+  `).all() as MediaDatabaseRow[];
 
   return rows.map((row) => ({
     ...row,
-    seasons: row.seasons
-      ? row.seasons.split(',') as Season[]
-      : [],
+    seasons: row.seasons ? row.seasons.split(',') as Season[] : [],
+    periods: row.periods ? row.periods.split(',') as SeasonPeriod[] : [],
   }));
 }
 
@@ -184,14 +176,11 @@ export function deleteMedia(id: number): boolean {
   return result.changes > 0;
 }
 
-export function updateMedia(
-  media: UpdateMediaInput,
-): boolean {
+export function updateMedia(media: UpdateMediaInput): boolean {
   const db = getDatabase();
 
   const statement = db.prepare(`
-    UPDATE media
-    SET
+    UPDATE media SET
       title = ?,
       type = ?,
       year = ?,
@@ -201,25 +190,24 @@ export function updateMedia(
     WHERE id = ?
   `);
 
-  const result = statement.run(
-    media.title,
-    media.type,
-    media.year,
-    media.description,
-    media.filePath,
-    media.posterPath,
-    media.id,
-  );
-
-  if (result.changes > 0) {
-    saveMediaSeasons(
-      db,
+  return db.transaction(() => {
+    const result = statement.run(
+      media.title,
+      media.type,
+      media.year,
+      media.description,
+      media.filePath,
+      media.posterPath,
       media.id,
-      media.seasons,
     );
-  }
 
-  return result.changes > 0;
+    if (result.changes > 0) {
+      saveMediaSeasons(db, media.id, media.seasons);
+      saveMediaPeriods(db, media.id, media.periods);
+    }
+
+    return result.changes > 0;
+  })();
 }
 
 function saveMediaSeasons(
@@ -244,5 +232,20 @@ function saveMediaSeasons(
 
   for (const season of seasons) {
     insertStatement.run(mediaId, season);
+  }
+}
+function saveMediaPeriods(
+  db: Database.Database,
+  mediaId: number,
+  periods: SeasonPeriod[],
+): void {
+  db.prepare('DELETE FROM media_periods WHERE media_id = ?').run(mediaId);
+
+  const insert = db.prepare(`
+    INSERT INTO media_periods (media_id, period) VALUES (?, ?)
+  `);
+
+  for (const period of periods) {
+    insert.run(mediaId, period);
   }
 }
