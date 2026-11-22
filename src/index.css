@@ -863,3 +863,199 @@ button {
   font-size: 13px;
 }
 
+
+
+/* One-off season plans */
+
+.season-plans {
+  margin: 30px 0;
+  padding: 24px;
+  border: 1px solid var(--season-border);
+  border-radius: 14px;
+  background: var(--season-panel);
+}
+
+.season-plans-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.season-plans-header h2 {
+  margin: 6px 0;
+  font-size: 24px;
+}
+
+.season-plans-header p {
+  margin: 0;
+  color: #aaa;
+  font-size: 13px;
+}
+
+.season-plans-year-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--season-accent);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.season-plans button {
+  padding: 8px 12px;
+  border: 1px solid #444;
+  border-radius: 7px;
+  background: #292929;
+  color: #fff;
+}
+
+.season-plans button:hover:not(:disabled) {
+  background: #393939;
+}
+
+.season-plans button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.season-plans input[type='text'],
+.season-plans select {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #454545;
+  border-radius: 7px;
+  outline: none;
+  background: #111;
+  color: #eee;
+}
+
+.season-plans input:focus-visible,
+.season-plans select:focus-visible {
+  border-color: var(--season-accent);
+}
+
+.season-plans-add {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.season-plans-add button {
+  min-height: 40px;
+}
+
+.season-plans-progress {
+  margin-top: 20px;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.season-plans-progress-track {
+  height: 6px;
+  margin-top: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #333;
+}
+
+.season-plans-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--season-accent);
+  transition: width 0.2s ease;
+}
+
+.season-plans-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.season-plans-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #333;
+  border-radius: 9px;
+  background: #202020;
+}
+
+.season-plans-item-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.season-plans-item-title input {
+  flex-shrink: 0;
+  accent-color: var(--season-accent);
+}
+
+.season-plans-list li.completed .season-plans-item-title span {
+  color: #8f8f8f;
+  text-decoration: line-through;
+}
+
+.season-plans-item-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.season-plans-item-actions button {
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
+.season-plans-edit {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.season-plans-edit input {
+  flex: 1;
+}
+
+.season-plans-error {
+  margin: 14px 0 0;
+  color: #ff9696;
+  font-size: 13px;
+}
+
+.season-plans-empty {
+  margin: 18px 0 0;
+  color: #999;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .season-plans-add {
+    grid-template-columns: 1fr;
+  }
+
+  .season-plans-list li {
+    flex-wrap: wrap;
+  }
+
+  .season-plans-item-actions {
+    margin-left: 26px;
+  }
+}
