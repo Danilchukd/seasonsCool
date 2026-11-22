@@ -1,8 +1,10 @@
 import type {
   CreateMediaInput,
   Season,
+  SeasonPeriod,
   UpdateMediaInput,
 } from '../types/media';
+import { getPeriodSeason, isSeasonPeriod } from '../utils/seasonPeriods';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -71,6 +73,7 @@ export function validateCreateMediaInput(
     filePath,
     posterPath,
     seasons,
+    periods,
   } = input;
 
   if (typeof title !== 'string' || title.trim().length === 0) {
@@ -81,6 +84,8 @@ export function validateCreateMediaInput(
     throw new Error('Media type cannot be empty');
   }
 
+  const validatedSeasons = validateSeasons(seasons);
+
   return {
     title: title.trim(),
     type: type.trim(),
@@ -88,7 +93,8 @@ export function validateCreateMediaInput(
     description: validateDescription(description),
     filePath: validateFilePath(filePath),
     posterPath: validatePosterPath(posterPath),
-    seasons: validateSeasons(seasons),
+    seasons: validatedSeasons,
+    periods: validatePeriods(periods, validatedSeasons),
   };
 }
 
@@ -117,6 +123,38 @@ function validateSeasons(
   );
 
   return [...new Set(seasons)];
+}
+
+function validatePeriods(
+  value: unknown,
+  seasons: Season[],
+): SeasonPeriod[] {
+  // Existing clients and records can omit the new field.
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    throw new Error('Media periods must be an array');
+  }
+
+  const periods: SeasonPeriod[] = [];
+
+  for (const period of value) {
+    if (!isSeasonPeriod(period)) {
+      throw new Error('Unknown media period');
+    }
+
+    if (!seasons.includes(getPeriodSeason(period))) {
+      throw new Error('Period must belong to one of the selected seasons');
+    }
+
+    if (!periods.includes(period)) {
+      periods.push(period);
+    }
+  }
+
+  return periods;
 }
 
 export function validateUpdateMediaInput(

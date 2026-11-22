@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { MediaRecord, Season } from '../types/media';
 import type { SeasonPlan } from '../types/seasonPlan';
@@ -34,94 +34,126 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
   const [mediaId, setMediaId] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
-  const [reloadKey, setReloadKey] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const queryVersion = useRef(0);
+  const newPlanInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
-    let active = true;
-
+    // Ignore late IPC results when the user changes the season/year.
+    const version = ++queryVersion.current;
     setLoading(true);
     setError(null);
     setPlans([]);
+    setEditingId(null);
+    setEditTitle('');
+    setConfirmDeleteId(null);
 
     window.electronAPI.getSeasonPlans({ season, seasonYear })
       .then((result) => {
-        if (active) {
+        if (version === queryVersion.current) {
           setPlans(result);
         }
       })
       .catch((reason: unknown) => {
         console.error('Failed to load season plans', reason);
-        if (active) {
+        if (version === queryVersion.current) {
           setError('Не удалось загрузить планы.');
         }
       })
       .finally(() => {
-        if (active) {
+        if (version === queryVersion.current) {
           setLoading(false);
         }
       });
 
     return () => {
-      active = false;
+      queryVersion.current += 1;
     };
-  }, [season, seasonYear, reloadKey]);
-
-  const refresh = () => setReloadKey((key) => key + 1);
+  }, [season, seasonYear]);
 
   const handleAdd = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const planTitle = title.trim();
-    if (!planTitle || busy) {
+    if (!planTitle || creating) {
       return;
     }
 
-    setBusy(true);
+    const version = queryVersion.current;
+    const selectedMediaId = mediaId;
+    setCreating(true);
     setError(null);
 
     try {
-      await window.electronAPI.createSeasonPlan({
+      const id = await window.electronAPI.createSeasonPlan({
         season,
         seasonYear,
         title: planTitle,
-        mediaId,
+        mediaId: selectedMediaId,
       });
 
-      setTitle('');
-      setMediaId(null);
-      refresh();
+      if (version === queryVersion.current) {
+        setPlans((current) => [...current, {
+          id,
+          season,
+          seasonYear,
+          title: planTitle,
+          completed: false,
+          mediaId: selectedMediaId,
+          createdAt: new Date().toISOString(),
+        }]);
+        setTitle('');
+        setMediaId(null);
+      }
     } catch (reason) {
       console.error('Failed to create season plan', reason);
-      setError('Не удалось добавить план.');
+      if (version === queryVersion.current) {
+        setError('Не удалось добавить план.');
+      }
     } finally {
-      setBusy(false);
+      setCreating(false);
     }
   };
 
   const handleToggle = async (plan: SeasonPlan) => {
-    if (busy) {
+    if (pendingIds.includes(plan.id)) {
       return;
     }
 
-    setBusy(true);
+    const version = queryVersion.current;
+    const nextCompleted = !plan.completed;
+    setPendingIds((current) => [...current, plan.id]);
     setError(null);
 
+    // Render the new checkbox state immediately, without reloading every plan.
+    setPlans((current) => current.map((item) =>
+      item.id === plan.id ? { ...item, completed: nextCompleted } : item,
+    ));
+
     try {
-      await window.electronAPI.updateSeasonPlan({
+      const updated = await window.electronAPI.updateSeasonPlan({
         id: plan.id,
         title: plan.title,
-        completed: !plan.completed,
+        completed: nextCompleted,
       });
 
-      refresh();
+      if (!updated) {
+        throw new Error('Plan was not found');
+      }
     } catch (reason) {
       console.error('Failed to update season plan', reason);
-      setError('Не удалось изменить статус плана.');
+      if (version === queryVersion.current) {
+        setPlans((current) => current.map((item) =>
+          item.id === plan.id ? { ...item, completed: plan.completed } : item,
+        ));
+        setError('Не удалось изменить статус плана.');
+      }
     } finally {
-      setBusy(false);
+      setPendingIds((current) => current.filter((id) => id !== plan.id));
     }
   };
 
@@ -131,50 +163,75 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
   ) => {
     event.preventDefault();
 
-    if (!editTitle.trim() || busy) {
+    const newTitle = editTitle.trim();
+    if (!newTitle || pendingIds.includes(plan.id)) {
       return;
     }
 
-    setBusy(true);
+    const version = queryVersion.current;
+    setPendingIds((current) => [...current, plan.id]);
     setError(null);
 
     try {
-      await window.electronAPI.updateSeasonPlan({
+      const updated = await window.electronAPI.updateSeasonPlan({
         id: plan.id,
-        title: editTitle.trim(),
+        title: newTitle,
         completed: plan.completed,
       });
 
-      setEditingId(null);
-      setEditTitle('');
-      refresh();
+      if (!updated) {
+        throw new Error('Plan was not found');
+      }
+
+      if (version === queryVersion.current) {
+        setPlans((current) => current.map((item) =>
+          item.id === plan.id ? { ...item, title: newTitle } : item,
+        ));
+        setEditingId(null);
+        setEditTitle('');
+      }
     } catch (reason) {
       console.error('Failed to rename season plan', reason);
-      setError('Не удалось сохранить название.');
+      if (version === queryVersion.current) {
+        setError('Не удалось сохранить название.');
+      }
     } finally {
-      setBusy(false);
+      setPendingIds((current) => current.filter((id) => id !== plan.id));
     }
   };
 
   const handleDelete = async (plan: SeasonPlan) => {
-    if (busy || !window.confirm('Удалить план «' + plan.title + '»?')) {
+    if (pendingIds.includes(plan.id)) {
       return;
     }
 
-    setBusy(true);
+    const version = queryVersion.current;
+    setPendingIds((current) => [...current, plan.id]);
     setError(null);
 
     try {
-      await window.electronAPI.deleteSeasonPlan(plan.id);
-      if (editingId === plan.id) {
-        setEditingId(null);
+      const deleted = await window.electronAPI.deleteSeasonPlan(plan.id);
+
+      if (!deleted) {
+        throw new Error('Plan was not found');
       }
-      refresh();
+
+      if (version === queryVersion.current) {
+        setPlans((current) => current.filter((item) => item.id !== plan.id));
+        setConfirmDeleteId(null);
+        if (editingId === plan.id) {
+          setEditingId(null);
+        }
+        // Deleting a row removes its focused button; return focus to a stable input.
+        newPlanInputRef.current?.focus();
+      }
     } catch (reason) {
       console.error('Failed to delete season plan', reason);
-      setError('Не удалось удалить план.');
+      if (version === queryVersion.current) {
+        setError('Не удалось удалить план.');
+      }
     } finally {
-      setBusy(false);
+      setPendingIds((current) => current.filter((id) => id !== plan.id));
     }
   };
 
@@ -194,7 +251,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
             type="button"
             aria-label="Предыдущий год"
             onClick={() => setSeasonYear((year) => year - 1)}
-            disabled={busy || seasonYear <= 1}
+            disabled={seasonYear <= 1}
           >
             ←
           </button>
@@ -203,7 +260,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
             type="button"
             aria-label="Следующий год"
             onClick={() => setSeasonYear((year) => year + 1)}
-            disabled={busy || seasonYear >= 9998}
+            disabled={seasonYear >= 9998}
           >
             →
           </button>
@@ -212,13 +269,14 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
 
       <form className="season-plans-add" onSubmit={handleAdd}>
         <input
+          ref={newPlanInputRef}
           type="text"
           value={title}
           maxLength={200}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Например, перепройти Max Payne"
           aria-label="Новый план"
-          disabled={busy}
+          disabled={creating}
           required
         />
 
@@ -235,7 +293,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
             }
           }}
           aria-label="Связанный материал"
-          disabled={busy}
+          disabled={creating}
         >
           <option value="">Без связи с медиатекой</option>
           {media.map((item) => (
@@ -245,7 +303,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
           ))}
         </select>
 
-        <button type="submit" disabled={busy || !title.trim()}>
+        <button type="submit" disabled={creating || !title.trim()}>
           Добавить план
         </button>
       </form>
@@ -283,16 +341,16 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
                     value={editTitle}
                     maxLength={200}
                     onChange={(event) => setEditTitle(event.target.value)}
-                    disabled={busy}
+                    disabled={pendingIds.includes(plan.id)}
                     required
                   />
-                  <button type="submit" disabled={busy || !editTitle.trim()}>
+                  <button type="submit" disabled={pendingIds.includes(plan.id) || !editTitle.trim()}>
                     Сохранить
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditingId(null)}
-                    disabled={busy}
+                    disabled={pendingIds.includes(plan.id)}
                   >
                     Отмена
                   </button>
@@ -304,28 +362,55 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
                       type="checkbox"
                       checked={plan.completed}
                       onChange={() => void handleToggle(plan)}
-                      disabled={busy}
+                      disabled={pendingIds.includes(plan.id)}
                     />
                     <span>{plan.title}</span>
                   </label>
                   <div className="season-plans-item-actions">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        setEditingId(plan.id);
-                        setEditTitle(plan.title);
-                      }}
-                    >
-                      Изменить
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void handleDelete(plan)}
-                    >
-                      Удалить
-                    </button>
+                    {confirmDeleteId === plan.id ? (
+                      <div
+                        className="season-plans-delete-confirm"
+                        role="group"
+                        aria-label={'Подтвердить удаление: ' + plan.title}
+                      >
+                        <span>Удалить план?</span>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => void handleDelete(plan)}
+                        >
+                          Да, удалить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => {
+                            setConfirmDeleteId(null);
+                            setEditingId(plan.id);
+                            setEditTitle(plan.title);
+                          }}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => setConfirmDeleteId(plan.id)}
+                        >
+                          Удалить
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               )}

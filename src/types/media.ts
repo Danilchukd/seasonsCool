@@ -9,6 +9,7 @@ export interface MediaRecord {
   description: string | null;
   created_at: string;
   seasons: Season[];
+  periods: SeasonPeriod[];
 }
 
 export interface CreateMediaInput {
@@ -19,6 +20,7 @@ export interface CreateMediaInput {
   filePath: string | null;
   posterPath: string | null;
   seasons: Season[];
+  periods: SeasonPeriod[];
 }
 
 export interface UpdateMediaInput {
@@ -30,6 +32,7 @@ export interface UpdateMediaInput {
   filePath: string | null;
   posterPath: string | null;
   seasons: Season[];
+  periods: SeasonPeriod[];
 }
 
 export type Season =
@@ -37,3 +40,17 @@ export type Season =
   | 'spring'
   | 'summer'
   | 'autumn';
+export type SeasonPeriod =
+  | 'winter_early'
+  | 'winter_pre_new_year'
+  | 'winter_holidays'
+  | 'winter_post_new_year'
+  | 'spring_early'
+  | 'spring_bloom'
+  | 'spring_late'
+  | 'summer_early'
+  | 'summer_peak'
+  | 'summer_late'
+  | 'autumn_early'
+  | 'autumn_golden'
+  | 'autumn_late';

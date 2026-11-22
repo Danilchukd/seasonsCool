@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import type { CreateMediaInput, Season, } from '../types/media';
+import type { CreateMediaInput, Season, SeasonPeriod } from '../types/media';
+import { getPeriodSeason } from '../utils/seasonPeriods';
+import MediaPeriodPicker from './MediaPeriodPicker';
 import PosterPreview from './PosterPreview';
 
 interface MediaFormProps {
@@ -15,6 +17,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
   const [filePath, setFilePath] = useState<string | null>(null);
   const [posterPath, setPosterPath] = useState<string | null>(null);
   const [seasons, setSeasons] = useState<Season[]>([]);
+  const [periods, setPeriods] = useState<SeasonPeriod[]>([]);
 
   const handleSelectFile = async () => {
     const selectedFile =
@@ -37,6 +40,9 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
   const toggleSeason = (
     season: Season,
   ) => {
+    setPeriods((current) => current.filter(
+      (period) => getPeriodSeason(period) !== season,
+    ));
     setSeasons((current) =>
       current.includes(season)
         ? current.filter(
@@ -63,6 +69,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
       filePath,
       posterPath,
       seasons,
+      periods,
     });
 
     setTitle('');
@@ -72,6 +79,7 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
     setFilePath(null);
     setPosterPath(null);
     setSeasons([]);
+    setPeriods([]);
   };
 
   return (
@@ -130,6 +138,12 @@ export default function MediaForm({ onAdd }: MediaFormProps) {
           Осень
         </label>
       </div>
+
+      <MediaPeriodPicker
+        seasons={seasons}
+        periods={periods}
+        onChange={setPeriods}
+      />
 
       <div>
         <label htmlFor="media-type">

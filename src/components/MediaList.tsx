@@ -2,12 +2,15 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 
 import PosterPreview from './PosterPreview';
+import MediaPeriodPicker from './MediaPeriodPicker';
 
 import { getSeasonLabel } from '../utils/season';
+import { getPeriodLabel, getPeriodSeason } from '../utils/seasonPeriods';
 
 import type {
   MediaRecord,
   Season,
+  SeasonPeriod,
   UpdateMediaInput,
 } from '../types/media';
 
@@ -81,6 +84,8 @@ export default function MediaList({
     setEditSeasons,
   ] = useState<Season[]>([]);
 
+  const [editPeriods, setEditPeriods] = useState<SeasonPeriod[]>([]);
+
   const startEditing = (
     item: MediaRecord,
   ) => {
@@ -107,6 +112,7 @@ export default function MediaList({
     setEditSeasons(
       item.seasons,
     );
+    setEditPeriods(item.periods);
   };
 
   const cancelEditing = () => {
@@ -121,11 +127,15 @@ export default function MediaList({
     setEditPosterPath(null);
 
     setEditSeasons([]);
+    setEditPeriods([]);
   };
 
   const toggleEditSeason = (
     season: Season,
   ) => {
+    setEditPeriods((current) => current.filter(
+      (period) => getPeriodSeason(period) !== season,
+    ));
     setEditSeasons((current) =>
       current.includes(season)
         ? current.filter(
@@ -201,6 +211,7 @@ export default function MediaList({
       posterPath: editPosterPath,
 
       seasons: editSeasons,
+      periods: editPeriods,
     });
 
     if (updated) {
@@ -403,6 +414,12 @@ if (media.length === 0) {
                 </label>
               </div>
 
+              <MediaPeriodPicker
+                seasons={editSeasons}
+                periods={editPeriods}
+                onChange={setEditPeriods}
+              />
+
               <div className="media-edit-section">
                 <span>Видео</span>
 
@@ -513,6 +530,14 @@ if (media.length === 0) {
                         </span>
                       ),
                     )}
+                  </div>
+                )}
+
+                {item.periods.length > 0 && (
+                  <div className="media-card-periods">
+                    {item.periods.map((period) => (
+                      <span key={period}>{getPeriodLabel(period)}</span>
+                    ))}
                   </div>
                 )}
 
