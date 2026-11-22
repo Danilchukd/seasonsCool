@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -8,6 +9,7 @@ import MediaForm from './components/MediaForm';
 import MediaList from './components/MediaList';
 import SeasonHero from './components/SeasonHero';
 import SeasonPlans from './components/SeasonPlans';
+import SeasonPeriodSelector from './components/SeasonPeriodSelector';
 import SeasonSelector from './components/SeasonSelector';
 import SeasonSuggestion from './components/SeasonSuggestion';
 
@@ -15,11 +17,13 @@ import {
   getCurrentSeason,
   getSeasonLabel,
 } from './utils/season';
+import { getPeriodLabel } from './utils/seasonPeriods';
 
 import type {
   CreateMediaInput,
   MediaRecord,
   Season,
+  SeasonPeriod,
   UpdateMediaInput,
 } from './types/media';
 
@@ -38,10 +42,27 @@ export default function App() {
   const [selectedSeason, setSelectedSeason] =
     useState<Season>(currentSeason);
 
-  const selectedSeasonMedia = media.filter(
-    (item) =>
-      item.seasons.includes(selectedSeason),
+  const [selectedPeriod, setSelectedPeriod] =
+    useState<SeasonPeriod | null>(null);
+
+  const selectedSeasonMedia = useMemo(
+    () => media.filter((item) => item.seasons.includes(selectedSeason)),
+    [media, selectedSeason],
   );
+
+  const visibleSeasonMedia = useMemo(
+    () => selectedPeriod === null
+      ? selectedSeasonMedia
+      : selectedSeasonMedia.filter((item) =>
+          item.periods.includes(selectedPeriod),
+        ),
+    [selectedSeasonMedia, selectedPeriod],
+  );
+
+  const handleSelectSeason = (season: Season) => {
+    setSelectedSeason(season);
+    setSelectedPeriod(null);
+  };
 
   const loadMedia = useCallback(async () => {
     const result =
@@ -169,12 +190,21 @@ export default function App() {
 
         <SeasonSelector
           selectedSeason={selectedSeason}
-          onSelect={setSelectedSeason}
+          onSelect={handleSelectSeason}
+        />
+
+        <SeasonPeriodSelector
+          season={selectedSeason}
+          selectedPeriod={selectedPeriod}
+          onSelect={setSelectedPeriod}
         />
 
         <SeasonSuggestion
-          media={selectedSeasonMedia}
+          media={visibleSeasonMedia}
           season={selectedSeason}
+          periodLabel={
+            selectedPeriod === null ? null : getPeriodLabel(selectedPeriod)
+          }
         />
 
         <SeasonPlans
@@ -187,24 +217,29 @@ export default function App() {
           <div className="season-media-header">
             <div>
               <span className="season-media-label">
-                Подборка сезона
+                {selectedPeriod === null ? 'Подборка сезона' : 'Подборка периода'}
               </span>
 
               <h2>
-                {getSeasonLabel(selectedSeason)}
+                {selectedPeriod === null
+                  ? getSeasonLabel(selectedSeason)
+                  : getPeriodLabel(selectedPeriod)}
               </h2>
             </div>
 
             <span className="season-media-count">
-              {selectedSeasonMedia.length}
+              {visibleSeasonMedia.length}
             </span>
           </div>
 
           <MediaList
-            media={selectedSeasonMedia}
+            media={visibleSeasonMedia}
             onUpdate={handleUpdateMedia}
             onDelete={handleDeleteMedia}
-            emptyMessage="Для этого сезона пока ничего не добавлено."
+            emptyMessage={selectedPeriod === null
+              ? 'Для этого сезона пока ничего не добавлено.'
+              : 'Для этого периода пока нет материалов. Выбери периоды при редактировании медиа.'
+            }
           />
         </div>
       </section>
