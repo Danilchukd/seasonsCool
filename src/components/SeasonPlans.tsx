@@ -39,6 +39,8 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
   const [pendingIds, setPendingIds] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
   const queryVersion = useRef(0);
+  const newPlanInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     // Ignore late IPC results when the user changes the season/year.
@@ -48,6 +50,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
     setPlans([]);
     setEditingId(null);
     setEditTitle('');
+    setConfirmDeleteId(null);
 
     window.electronAPI.getSeasonPlans({ season, seasonYear })
       .then((result) => {
@@ -198,10 +201,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
   };
 
   const handleDelete = async (plan: SeasonPlan) => {
-    if (
-      pendingIds.includes(plan.id) ||
-      !window.confirm('Удалить план «' + plan.title + '»?')
-    ) {
+    if (pendingIds.includes(plan.id)) {
       return;
     }
 
@@ -218,9 +218,12 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
 
       if (version === queryVersion.current) {
         setPlans((current) => current.filter((item) => item.id !== plan.id));
+        setConfirmDeleteId(null);
         if (editingId === plan.id) {
           setEditingId(null);
         }
+        // Deleting a row removes its focused button; return focus to a stable input.
+        newPlanInputRef.current?.focus();
       }
     } catch (reason) {
       console.error('Failed to delete season plan', reason);
@@ -266,6 +269,7 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
 
       <form className="season-plans-add" onSubmit={handleAdd}>
         <input
+          ref={newPlanInputRef}
           type="text"
           value={title}
           maxLength={200}
@@ -363,23 +367,50 @@ export default function SeasonPlans({ season, media }: SeasonPlansProps) {
                     <span>{plan.title}</span>
                   </label>
                   <div className="season-plans-item-actions">
-                    <button
-                      type="button"
-                      disabled={pendingIds.includes(plan.id)}
-                      onClick={() => {
-                        setEditingId(plan.id);
-                        setEditTitle(plan.title);
-                      }}
-                    >
-                      Изменить
-                    </button>
-                    <button
-                      type="button"
-                      disabled={pendingIds.includes(plan.id)}
-                      onClick={() => void handleDelete(plan)}
-                    >
-                      Удалить
-                    </button>
+                    {confirmDeleteId === plan.id ? (
+                      <div
+                        className="season-plans-delete-confirm"
+                        role="group"
+                        aria-label={'Подтвердить удаление: ' + plan.title}
+                      >
+                        <span>Удалить план?</span>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => void handleDelete(plan)}
+                        >
+                          Да, удалить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => setConfirmDeleteId(null)}
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => {
+                            setConfirmDeleteId(null);
+                            setEditingId(plan.id);
+                            setEditTitle(plan.title);
+                          }}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pendingIds.includes(plan.id)}
+                          onClick={() => setConfirmDeleteId(plan.id)}
+                        >
+                          Удалить
+                        </button>
+                      </>
+                    )}
                   </div>
                 </>
               )}
