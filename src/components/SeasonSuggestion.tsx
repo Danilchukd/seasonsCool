@@ -16,6 +16,7 @@ import { getSeasonLabel } from '../utils/season';
 interface SeasonSuggestionProps {
   media: MediaRecord[];
   season: Season;
+  periodLabel?: string | null;
 }
 
 function getTypeLabel(type: string) {
@@ -40,6 +41,7 @@ function getTypeLabel(type: string) {
 export default function SeasonSuggestion({
   media,
   season,
+  periodLabel = null,
 }: SeasonSuggestionProps) {
   const [suggestedMedia, setSuggestedMedia] =
     useState<MediaRecord | null>(null);
@@ -106,8 +108,10 @@ export default function SeasonSuggestion({
         <span>Что выбрать сегодня?</span>
 
         <p>
-          Для сезона «{getSeasonLabel(season)}»
-          пока нечего предложить.
+          {periodLabel
+            ? `Для периода «${periodLabel}» пока нечего предложить.`
+            : `Для сезона «${getSeasonLabel(season)}» пока нечего предложить.`}
+
         </p>
       </div>
     );
