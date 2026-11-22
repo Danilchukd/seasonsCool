@@ -32,6 +32,20 @@ function initializeSchema(db: Database.Database) {
         REFERENCES media(id)
         ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS season_plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      season TEXT NOT NULL CHECK (season IN ('winter', 'spring', 'summer', 'autumn')),
+      season_year INTEGER NOT NULL CHECK (season_year BETWEEN 1 AND 9998),
+      title TEXT NOT NULL,
+      is_completed INTEGER NOT NULL DEFAULT 0 CHECK (is_completed IN (0, 1)),
+      media_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (media_id) REFERENCES media(id) ON DELETE SET NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_season_plans_season_year
+      ON season_plans (season, season_year);
   `);
 }
 
@@ -55,7 +69,7 @@ export function initializeDatabase(): void {
   initializeSchema(database);
 }
 
-function getDatabase(): Database.Database {
+export function getDatabase(): Database.Database {
   if (!database) {
     throw new Error('Database has not been initialized');
   }

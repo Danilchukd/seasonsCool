@@ -7,6 +7,7 @@ import {
 import MediaForm from './components/MediaForm';
 import MediaList from './components/MediaList';
 import SeasonHero from './components/SeasonHero';
+import SeasonPlans from './components/SeasonPlans';
 import SeasonSelector from './components/SeasonSelector';
 import SeasonSuggestion from './components/SeasonSuggestion';
 
@@ -174,6 +175,12 @@ export default function App() {
         <SeasonSuggestion
           media={selectedSeasonMedia}
           season={selectedSeason}
+        />
+
+        <SeasonPlans
+          key={selectedSeason}
+          season={selectedSeason}
+          media={selectedSeasonMedia}
         />
 
         <div className="season-media-section">
